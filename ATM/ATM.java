@@ -1,17 +1,24 @@
-package com.code.atm_04;
-
 import java.util.Scanner;
 
 class ATM {
-    private int cash;// 此刻ATM内的现金
-    // 定义一个数组,装用户信息
-    private UserInfo theUser;// 用户信息
-    public final int MAX_CASH = 100000;// 最大现金数
+    // 此刻ATM内的现金
+    private int     cash;
+    // 用户信息
+    private User    theUser;
+    // 定义一个数组,保存全部用户信息
+    private User[]  allUsers;
+    // ATM能保存的最大现金数
+    public final int    MAX_CASH    = 100000;
 
     public ATM() {
+        allUsers = new User[5];
         // 用atm构造器new一个用户信息,然后用户输入信息来跟这个用户信息对比验证
-        this.theUser = new UserInfo("张三", "1", "1", 20000);
-        this.cash = 50000;
+        allUsers[0] = new User("张三", "1", "10", 20000);
+        allUsers[1] = new User("李四", "2", "20", 30000);
+        allUsers[2] = new User("王五", "3", "30", 40000);
+        allUsers[3] = new User("赵六", "4", "40", 50000);
+        allUsers[4] = new User("田七", "5", "50", 60000);
+        cash = 50000;
     }
 
     // 运行--完成流程控制
@@ -61,19 +68,24 @@ class ATM {
     // 登录
     private boolean login() {
         Scanner scan = new Scanner(System.in);
-
         for (int i = 0; i < 3; i++) {
             System.out.println("请输入卡号：");
             String inputCardNum = scan.next();
             System.out.println("请输入密码：");
             String inputPwd = scan.next();
-
-            if (inputCardNum.equals(this.theUser.getCardNum()) &&
-                    inputPwd.equals(this.theUser.getPassword())) {
-                System.out.println("登录成功！");
-                return true;
-            }
-            System.out.println("您还有" + (2 - i) + "次机会！");
+            //System.out.println(allUsers.length);
+            for (int j = 0; j < allUsers.length; j++) {
+                System.out.println(allUsers[j].getCardNum());
+                if (inputCardNum.equals(this.allUsers[j].getCardNum()) &&
+                        inputPwd.equals(this.allUsers[j].getPassword())) {
+                    System.out.println("登录成功！");
+                    // 知道是谁登录了系统
+                    theUser = allUsers[j];
+                    // index = j;
+                    return true;
+                }
+            } // for循环体
+            System.out.println("卡号或密码错误,您还有" + (2 - i) + "次机会！");
         }
         System.out.println("三次卡号密码输入错误，卡被没收！");
         return false;
