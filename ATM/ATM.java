@@ -1,7 +1,15 @@
 import java.util.Scanner;
 
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Scanner;
 /**
- * 异常处理机制的使用
+ * 使用正则表达式代替异常处理检查用户输入是否合法
+ * 使用HashMap存储用户数据
+ * 用卡号做键值,用户信息对象作为值
+ * 添加打印凭条功能
  */
 
 class ATM {
@@ -9,18 +17,19 @@ class ATM {
     private int     cash;
     // 用户信息
     private UserInfo    theUser;
-    // 定义一个数组,保存全部用户信息
-    private UserInfo[]  allUsers;
+    // 使用HashMap存储用户数据
+    private HashMap<String, UserInfo>   UserInfoMap = new HashMap<String, UserInfo>();
     // ATM能保存的最大现金数
     public final int    MAX_CASH    = 100000;
 
     public ATM() {
         allUsers = new UserInfo[5];
-        for(int i = 0 ; i < allUsers.length; i++){
-            allUsers[i] = new UserInfo("zhang"+i,
+        for(int i = 0 ; i < 5; i++){
+            UserInfoMap.put("12345" + i ,
+                           new UserInfo("zhang"+i,
                                         "12345"+i,
                                         "12345"+i,
-                                        10000 + i * 1000)
+                                        10000 + i * 1000));
         }
         cash = 50000;
     }
@@ -77,14 +86,16 @@ class ATM {
             String inputCardNum = scan.next();
             System.out.println("请输入密码：");
             String inputPwd = scan.next();
-            //用String类型接收数据时,不需要用到异常处理
-            for (int j = 0; j < allUsers.length; j++) {
-                System.out.println(allUsers[j].getCardNum());
-                if (inputCardNum.equals(this.allUsers[j].getCardNum()) &&
-                        inputPwd.equals(this.allUsers[j].getPassword())) {
+
+
+            // 这里是用集合来装所有的元素
+            // 也可以用Set来装所有的键,然后遍历键,从而找到对应的那个元素的密码,然后对比
+            Collection<UserInfo> cl = UserInfoMap.values();
+            for (UserInfo user : cl) {
+                if (user.getCardNum().equals(inputCardNum)
+                        && user.getPassword().equals(inputPwd)) {
                     System.out.println("登录成功！");
-                    // 知道是谁登录了系统
-                    theUser = allUsers[j];
+                    theUser = user;
                     return true;
                 }
             } // for循环体
@@ -97,32 +108,29 @@ class ATM {
     // 选择菜单
     private int choiceMenu() {
         while(true){
-            try{
                 Scanner scan = new Scanner(System.in);
                 System.out.println("请选择您要操作的业务：");
                 System.out.println("1、查询余额；2、取款业务；3、存款业务；4、修改密码；5、退出");
-                int choice = scan.nextInt();
-                return choice;
-            } catch(InputMismatchException e){
-                    // e.printStackTrace();
-                    // System.out.println(e.getMessage());
-                    System.out.println("请输入1-5之间的数字,是否继续(Y/N)");
+                String choice = scan.next();
+                boolean b = choice.matches("[1-5]{1,1}");
+                if(b){
+                    int a = Integer.parseInt(choice);
+                    return a;
+                }else {
+                    System.out.println("错误,请输入1-5之间的正整数!");
+                    System.out.println("是否继续?(y/n)");
                     String s = new Scanner(System.in).next();
-                    if (s.equals("Y") || s.equals("Y")) {
+                    if (s.matches("[y]|[Y]")) {
                         continue;
                     }
-                    if (s.equals("N") || s.equals("n")) {
+                    if (s.matches("(n|N)")) {
                         exit(0);
-                    }
-                    else{
+                    } else {
                         System.out.println("输入错误,谢谢使用");
                         exit(0);
                     }
-            } catch (Exception e) {
-                    System.out.println("未知错误!请核实后与柜台人员联系");
-                        exit(0);
+                }
             }
-        }
     }
 
 
@@ -134,45 +142,44 @@ class ATM {
 
     // 存钱
     private void saveMoney() {
-        while (true) {
-            try {
-                Scanner scan = new Scanner(System.in);
-                System.out.println("请输入你要存入的金额：");
-                int inputMoney = scan.nextInt();// 如果在这里出现异常,则跳到catch语句,后面不执行;
-                if (inputMoney < 0) {
-                    System.out.println("你输入的钱是负数，无法操作！");
-                    return;
-                }
-                if (inputMoney == 0) {
-                    System.out.println("他妈你没钱还来存钱?滚粗!");
-                    return;
-                }
-                if (inputMoney % 100 != 0) {
-                    System.out.println("你输入的钱不是100的整数，无法操作！");
-                    return;
-                }
-                if (this.cash + inputMoney > MAX_CASH) {
-                    System.out.println("本机容量不足，无法操作！");
-                    return;
-                }
-                this.cash += inputMoney;
-                this.theUser.setAccount(this.theUser.getAccount() + inputMoney);
-                System.out.println("存钱操作已经成功，谢谢！");
+        int money = 0;
+        while(true){
+            Scanner scan = new Scanner(System.in);
+            System.out.println("请输入你要存入的金额：");
+            String input = scan.next();
+            int inputMoney;
+            if (input.matches("(200|1[0-9]{2}|[1-9][0-9]?)00")) {
+                inputMoney = Integer.parseInt(input);
+            } else {
+                System.out.println("输入错误");
                 return;
-            } catch (InputMismatchException e) {
-                System.out.println("输入错误,请不要输入字符或小数,是否继续(Y/N)");
-                String s = new Scanner(System.in).next();
-                if (s.equals("Y") || s.equals("Y")) {
-                    continue;
-                }
-                if (s.equals("N") || s.equals("n")) {
+            }
+
+            if (this.cash + inputMoney > this.MAX_CASH) {
+                System.out.println("本机容量不足，无法操作！");
+                return;
+            }
+            this.cash += inputMoney;
+            money += inputMoney;
+            this.theUser.setAccount(this.theUser.getAccount() + inputMoney);
+            System.out.println("存钱操作已经成功，是否继续操作?(y/n)");
+            String conti = new Scanner(System.in).next();
+            if(conti.matches("(y|Y)")){
+                continue;
+            } else if (conti.matches("(n|N)")) {
+                System.out.println("是否打印凭条?(y/n)");
+                String sc = new Scanner(System.in).next();
+                if (sc.matches("(y|Y)")) {
+                    print("存款金额:", money);
+                    break;
+                } else if (sc.matches("(n|N)")) {
                     exit(0);
                 } else {
                     System.out.println("输入错误,谢谢使用");
                     exit(0);
                 }
-            }catch (Exception e) {
-                System.out.println("未知错误!请核实后与柜台人员联系");
+            }else{
+                System.out.println("输入错误,谢谢使用");
                 exit(0);
             }
         }
@@ -180,93 +187,80 @@ class ATM {
 
     // 取钱
     private void getMoney() {
-        while(true){
-            try{
-                Scanner scan = new Scanner(System.in);
-                System.out.println("请输入你要取出的金额：");
-                int outputMoney = scan.nextInt();//只能输入整数
-                if (outputMoney < 0) {
-                    System.out.println("你输入的钱是负数，无法操作！");
-                    return;
-                }
-                if (outputMoney == 0) {
-                    System.out.println("不取钱你来干嘛,滚粗！");
-                    return;
-                }
-                if (outputMoney % 100 != 0) {
-                    System.out.println("你输入的钱不是100的整数，无法操作！");
-                    return;
-                }
-                if (this.theUser.getAccount() < outputMoney) {
-                    System.out.println("您账户的余额不足，无法操作！");
-                    return;
-                }
-                if (this.cash <= outputMoney) {
-                    System.out.println("本机现金不足，无法操作！");
-                    return;
-                }
-                this.theUser.setAccount(this.theUser.getAccount() - outputMoney);
-                this.cash -= outputMoney;
-                System.out.println("取钱操作已经成功，请收好现金！");
+        int money = 0;
+        while (true) {
+            Scanner scan = new Scanner(System.in);
+            System.out.println("请输入你要取出的金额：");
+            String inputMoney = scan.next();
+            int outputMoney;
+
+            if (inputMoney.matches("(200|1[0-9]{2}|[1-9][0-9]?)00")) {
+                outputMoney = Integer.parseInt(inputMoney);
+            } else {
+                System.out.println("输入错误");
                 return;
-            } catch (InputMismatchException e) {
-                System.out.println("输入不能为字符或小数,是否继续(Y/N)");
-                String s = new Scanner(System.in).next();
-                if (s.equals("Y") || s.equals("y")) {
-                    continue;
-                }
-                if (s.equals("N") || s.equals("n")) {
+            }
+
+            if (this.theUser.getAccount() < outputMoney) {
+                System.out.println("您账户的余额不足，无法操作！");
+                return;
+            }
+            if (this.cash <= outputMoney) {
+                System.out.println("本机现金不足，无法操作！");
+                return;
+            }
+            this.theUser.setAccount(this.theUser.getAccount() - outputMoney);
+            this.cash -= outputMoney;
+            money += outputMoney;
+            System.out.println("取钱操作成功,是否继续操作(y/n)");
+            String conti = new Scanner(System.in).next();
+            if (conti.matches("(y|Y)")) {
+                continue;
+            } else if (conti.matches("(n|N)")) {
+                System.out.println("是否打印凭条?(y/n)");
+                String sc = new Scanner(System.in).next();
+                if (sc.trim().equalsIgnoreCase(sc)) {
+                    print("取款金额:", money);
+                    break;
+                } else if (sc.matches("(n|N)")) {
                     exit(0);
                 } else {
                     System.out.println("输入错误,谢谢使用");
                     exit(0);
                 }
-            }catch (Exception e) {
-                System.out.println("未知错误!请核实后与柜台人员联系");
-                exit(0);
             }
         }
     }
 
     // 修改密码
     private void changPwd() {
-        while (true) {
-            try {
-                Scanner scan = new Scanner(System.in);
-                System.out.println("请输入原密码：");
-                String oldPwd = scan.next();
-                System.out.println("请输入新密码：");
-                String newPwd = scan.next();
-                System.out.println("请确认新密码：");
-                String reNewPwd = scan.next();
+        Scanner scan = new Scanner(System.in);
+        System.out.println("请输入原密码：");
+        String oldPwd = scan.next();
+        System.out.println("请输入新密码：");
+        String newPwd = scan.next();
+        System.out.println("请确认新密码：");
+        String reNewPwd = scan.next();
 
-                if (!oldPwd.equals(theUser.getPassword())) {
-                    System.out.println("原密码输入错误！");
-                    return;
-                }
-                if (!newPwd.equals(reNewPwd)) {
-                    System.out.println("两次新密码输入不一致！");
-                    return;
-                }
-                this.theUser.setPassword(newPwd);
-                System.out.println("新密码设置成功！");
-            } catch (InputMismatchException e) {
-                System.out.println("输入不能为字符或小数,是否继续(Y/N)");
-                String s = new Scanner(System.in).next();
-                if (s.equals("Y") || s.equals("Y")) {
-                    continue;
-                }
-                if (s.equals("N") || s.equals("n")) {
-                    exit(0);
-                } else {
-                    System.out.println("输入错误,谢谢使用");
-                    exit(0);
-                }
-            } catch (Exception e) {
-                System.out.println("未知错误!请核实后与柜台人员联系");
-                exit(0);
-            }
+        if (!oldPwd.equals(this.theUser.getPassword())) {
+            System.out.println("原密码输入错误！");
+            return;
         }
+        if (!newPwd.equals(reNewPwd)) {
+            System.out.println("两次新密码输入不一致！");
+            return;
+        }
+        this.theUser.setPassword(newPwd);
+        System.out.println("新密码设置成功！");
+    }
+
+    // 打印凭条
+    private void print(String message, int money) {
+        SimpleDateFormat sim = new SimpleDateFormat("yyyy年MM月dd日hh点mm分ss秒 E");
+        String date = sim.format(new Date());
+        String s = "用户名:" + theUser.getUsername() + "\n" + message + money + "元"
+                + "\n" + "日期:" + date;
+        System.out.println(s);
     }
 
     // 退出
